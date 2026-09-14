@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JEVIS: Joint Entropy Estimation in 3DGS via Visibility Field for Active Mapping</title>
+<meta name="description" content="JEVIS: a theoretically grounded framework for quantifying the expected information gain of multiple planned observations in 3D Gaussian Splatting through joint entropy estimation.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232a78d6'/%3E%3Ctext x='50' y='70' font-family='Arial,sans-serif' font-size='56' font-weight='700' fill='white' text-anchor='middle'%3EJ%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+<nav class="page-nav" aria-label="Page sections">
+  <ul>
+    <li><a href="#tldr">TL;DR</a></li>
+    <li><a href="#abstract">Abstract</a></li>
+    <li><a href="#contributions">Contributions</a></li>
+    <li><a href="#results">Results</a></li>
+  </ul>
+</nav>
+<main>
+
+<header class="hero">
+  <div class="container">
+    <h1 class="wordmark">JEVIS</h1>
+    <p class="title">Joint Entropy Estimation in 3DGS via Visibility Field<br>for Active Mapping</p>
+
+    <p class="authors">Anonymous Authors</p>
+    <p class="affil">Under review</p>
+    <p><span class="badge"><span class="dot"></span>Anonymous Submission</span></p>
+
+  </div>
+</header>
+
+<section id="tldr">
+  <div class="container">
+    <div class="tldr">
+      <span class="tldr-badge">TL;DR</span>
+      <p><b>JEVIS</b> is a principled framework for quantifying the joint information gain of multiple planned observations in 3DGS, enabling long-horizon and multi-agent active perception.</p>
+    </div>
+  </div>
+</section>
+
+<section class="teaser">
+  <div class="container">
+    <img src="static/images/teaser.webp" width="2000" height="1182" alt="Teaser: an agent chooses between two trajectories that share a common planned view (O). Trajectory A adds a view overlapping O; trajectory B adds a complementary view. The baseline double-counts the overlapping region and rates A and B about equal, while JEVIS discounts the overlap and correctly prefers B.">
+  </div>
+</section>
+
+<section class="section" id="abstract">
+  <div class="container">
+    <h2>Abstract</h2>
+    <p class="prose">Active mapping requires planning observations that maximally reduce uncertainty about an unknown scene. Recent methods have substantially improved uncertainty quantification in 3D Gaussian Splatting (3DGS) by explicitly modeling visibility, assigning higher uncertainty to unobserved regions. However, these methods estimate the entropy of a single image observation and therefore primarily support myopic next-best-view selection. Practical deployments instead require estimating the joint entropy of multiple observations, such as views along a long-horizon trajectory or viewpoints assigned across a team of robots. In these settings, different views can observe common unseen regions of the scene, and the correlation between their observations is not negligible. To this end, we present <b>Joint Entropy estimation in 3DGS via VISibility field (JEVIS)</b>, a theoretically grounded framework for quantifying the expected information gain of multiple planned observations in 3DGS through joint entropy estimation. By leveraging a maximum-likelihood observation (MLO) approximation, JEVIS efficiently estimates joint entropy across multiple views. We evaluate JEVIS in long-horizon single-agent and multi-agent active mapping across diverse indoor and space-robotics environments. Results show that JEVIS more accurately captures joint uncertainty and produces higher-fidelity reconstructions than existing methods.</p>
+  </div>
+</section>
+
+<section class="section" id="contributions">
+  <div class="container">
+    <h2>Contributions</h2>
+    <ol class="contrib">
+      <li><span>We estimate the <strong>joint entropy</strong> of planned 3DGS observations to guide <strong>long-horizon active mapping</strong>.</span></li>
+      <li><span>We extend the formulation to multi-robot planning, offering, to our knowledge, the first <strong>information-theoretic</strong> approach to <strong>long-horizon multi-agent active mapping</strong> with radiance fields.</span></li>
+      <li><span>Across indoor and space environments, JEVIS improves reconstruction quality over baselines in single- and multi-agent settings.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section" id="results">
+  <div class="container">
+    <h2>Results</h2>
+    <figure class="video-fig">
+      <video data-src="static/videos/room_entropy.mp4" muted loop playsinline autoplay preload="none" disablepictureinpicture disableremoteplayback></video>
+      <figcaption>The candidate trajectory extends from observed into unseen regions, with substantial overlap between planned views. JEVIS sums each view’s entropy conditioned on preceding views to obtain the trajectory’s joint entropy, discounting previously covered regions. GAVIS scores views independently and double-counts overlap. JEVIS’s uncertainty maps more closely match ground-truth visibility.</figcaption>
+    </figure>
+    <figure class="video-fig">
+      <video data-src="static/videos/space_entropy.mp4" muted loop playsinline autoplay preload="none" disablepictureinpicture disableremoteplayback></video>
+      <figcaption>The candidate trajectory circles the spacecraft and revisits an earlier viewpoint. JEVIS sums each view’s entropy conditioned on preceding views to obtain the trajectory’s joint entropy, discounting the revisited region. GAVIS scores views independently and double-counts overlap. JEVIS’s uncertainty maps more closely match ground-truth visibility.</figcaption>
+    </figure>
+    <figure class="video-fig">
+      <video data-src="static/videos/single_am.mp4" muted loop playsinline autoplay preload="none" disablepictureinpicture disableremoteplayback></video>
+      <figcaption>JEVIS explores new regions along its trajectory, while the baseline repeatedly observes previously seen areas.</figcaption>
+    </figure>
+    <figure class="video-fig">
+      <video data-src="static/videos/multi_am.mp4" muted loop playsinline autoplay preload="none" disablepictureinpicture disableremoteplayback></video>
+      <figcaption>JEVIS agents explore complementary regions in parallel, whereas baseline agents follow largely overlapping trajectories.</figcaption>
+    </figure>
+    <div class="radar-block" id="radar">
+      <h3 class="radar-title" id="radar-title">Multi-Agent Active Mapping Quantitative Results</h3>
+      <div class="seg" role="group" aria-label="Setting">
+        <button type="button" data-setting="single" aria-pressed="false">Single-agent</button>
+        <button type="button" data-setting="multi" aria-pressed="true">Multi-agent</button>
+      </div>
+      <div class="radar-wrap"><svg class="radar-chart" viewBox="0 0 640 552" role="img" aria-labelledby="radar-title"></svg><div class="radar-tip"></div></div>
+      <div class="radar-legend" aria-label="Methods (click to show or hide)"></div>
+      <p class="radar-caption">Metrics span view synthesis quality (PSNR, SSIM, LPIPS), mesh reconstruction quality (CR: completion ratio), visibility (VIS), and uncertainty quantification time (T<sub>UQ</sub>: ms). All axes are normalized so that farther from the center is better.</p>
+    </div>
+  </div>
+</section>
+
+
+</main>
+<script src="static/js/radar-data.js"></script>
+<script src="static/js/radar.js"></script>
+<script>
+// load each video when it nears the viewport, play only while visible;
+// a click pauses it, and it stays paused (even after scrolling away and back) until clicked again
+(function () {
+  var vids = document.querySelectorAll('video[data-src]');
+  function load(v) { if (!v.src) { v.src = v.dataset.src; } }
+  function play(v) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+  vids.forEach(function (v) {
+    v.addEventListener('click', function () {
+      if (v.paused) { v.userPaused = false; load(v); play(v); }
+      else { v.userPaused = true; v.pause(); }
+    });
+  });
+  if (!('IntersectionObserver' in window)) { vids.forEach(function (v) { load(v); play(v); }); return; }
+  var io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) {
+      var v = e.target;
+      if (e.isIntersecting) { load(v); if (!v.userPaused) { play(v); } }
+      else if (v.src) { v.pause(); }
+    });
+  }, { rootMargin: '200px 0px' });
+  vids.forEach(function (v) { io.observe(v); });
+})();
+
+// left nav: highlight the section being read; a clicked link stays highlighted until the reader scrolls
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.page-nav a'));
+  var sections = links.map(function (a) { return document.querySelector(a.hash); });
+  var pinned = null, queued = false;
+  function update() {
+    queued = false;
+    // a section is "being read" once its top passes 150px from the top of the window
+    // (a fixed line, not a % of the window, so a short section still gets its turn)
+    var current = pinned, line = 150;
+    if (!current) {
+      sections.forEach(function (s) { if (s.getBoundingClientRect().top <= line) { current = s; } });
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) { current = sections[sections.length - 1]; }
+    }
+    links.forEach(function (a, i) { a.classList.toggle('active', sections[i] === current); });
+  }
+  links.forEach(function (a, i) { a.addEventListener('click', function () { pinned = sections[i]; update(); }); });
+  ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(function (type) {
+    window.addEventListener(type, function () { pinned = null; }, { passive: true });
+  });
+  window.addEventListener('scroll', function () { if (!queued) { queued = true; requestAnimationFrame(update); } }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+})();
+</script>
+</body>
+</html>
