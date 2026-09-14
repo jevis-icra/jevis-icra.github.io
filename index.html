@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>JEVIS: Joint Entropy Estimation in 3DGS via Visibility Field</title>
+<meta name="description" content="JEVIS is a principled framework for estimating the joint entropy of multiple synthesized views of a 3D Gaussian Splatting scene, enabling long-horizon and multi-agent active mapping.">
+<meta name="keywords" content="active mapping, 3D Gaussian Splatting, 3DGS, joint entropy, visibility field, multi-agent, long-horizon planning, uncertainty quantification">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph / Twitter. TODO: replace figs/social_card.png (1200x630) once the teaser is final. -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="JEVIS: Joint Entropy Estimation in 3DGS via Visibility Field">
+<meta property="og:description" content="Joint entropy of multiple views for long-horizon and multi-agent active mapping in 3D Gaussian Splatting.">
+<meta property="og:image" content="figs/social_card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JEVIS: Joint Entropy Estimation in 3DGS via Visibility Field">
+<meta name="twitter:description" content="Joint entropy of multiple views for long-horizon and multi-agent active mapping in 3D Gaussian Splatting.">
+<meta name="twitter:image" content="figs/social_card.png">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232a78d6'/%3E%3Ctext x='50' y='70' font-family='system-ui,sans-serif' font-size='56' font-weight='700' fill='white' text-anchor='middle'%3EJ%3C/text%3E%3C/svg%3E">
+
+<link rel="stylesheet" href="static/css/style.css">
+<link rel="stylesheet" href="static/vendor/katex/katex.min.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     NAVIGATION  (two variants: floating card ≥1280px, sticky bar below)
+     Section links are generated from these lists — keep ids in sync.
+     ══════════════════════════════════════════════════════════════════ -->
+<nav class="side-nav" aria-label="Page sections">
+  <p class="nav-title">Contents</p>
+  <ul>
+    <li><a href="#overview"><span class="nav-index">01</span>Overview</a></li>
+    <li><a href="#mapping"><span class="nav-index">02</span>Active Mapping</a></li>
+    <li><a href="#insights"><span class="nav-index">03</span>Insights</a></li>
+    <li><a href="#abstract"><span class="nav-index">04</span>Abstract</a></li>
+    <li><a href="#method"><span class="nav-index">05</span>Method</a></li>
+    <li><a href="#uncertainty"><span class="nav-index">06</span>Uncertainty</a></li>
+    <li><a href="#results"><span class="nav-index">07</span>Results</a></li>
+    <li><a href="#bibtex"><span class="nav-index">08</span>BibTeX</a></li>
+  </ul>
+</nav>
+
+<div class="top-nav">
+  <div class="container">
+    <a class="brand" href="#top">JEVIS</a>
+    <ul>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#mapping">Active Mapping</a></li>
+      <li><a href="#insights">Insights</a></li>
+      <li><a href="#abstract">Abstract</a></li>
+      <li><a href="#method">Method</a></li>
+      <li><a href="#uncertainty">Uncertainty</a></li>
+      <li><a href="#results">Results</a></li>
+      <li><a href="#bibtex">BibTeX</a></li>
+    </ul>
+  </div>
+</div>
+
+<main id="top">
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     HERO
+     ══════════════════════════════════════════════════════════════════ -->
+<header class="hero">
+  <div class="container">
+    <h1 class="wordmark">JEVIS</h1>
+    <p class="title">Joint Entropy Estimation in 3DGS via Visibility Field<br>for Long-Horizon and Multi-Agent Active Mapping</p>
+
+    <!-- Anonymous submission. TODO: swap for the author block at camera-ready. -->
+    <p class="authors">Anonymous Authors</p>
+    <p class="affil">Paper ID <b>TODO</b> &middot; Under review</p>
+    <p><span class="badge"><span class="dot"></span>Anonymous Submission</span></p>
+
+    <!-- TODO: every href="#" below is a placeholder — drop the real URLs in. -->
+    <div class="btn-row">
+      <a class="btn" href="#" aria-label="Paper PDF (link pending)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        <span>Paper</span><span class="todo">TODO</span>
+      </a>
+      <a class="btn" href="#" aria-label="arXiv (link pending)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 5l7 7-7 7M13 5h7M13 12h7M13 19h7"/></svg>
+        <span>arXiv</span><span class="todo">TODO</span>
+      </a>
+      <a class="btn secondary" href="#" aria-label="Code (link pending)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>
+        <span>Code</span><span class="todo">TODO</span>
+      </a>
+      <a class="btn secondary" href="#" aria-label="Supplementary video (link pending)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10 8 6 4-6 4V8z"/><rect x="2" y="4" width="20" height="16" rx="3"/></svg>
+        <span>Video</span><span class="todo">TODO</span>
+      </a>
+    </div>
+
+    <div class="scroll-hint" aria-hidden="true">
+      <span>Scroll</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     01 · OVERVIEW — TL;DR + teaser figure
+     ══════════════════════════════════════════════════════════════════ -->
+<section class="section" id="overview" style="padding-top: 0;">
+  <div class="container narrow">
+    <div class="tldr">
+      <span class="tag">TL;DR</span>
+      <p><b>JEVIS</b> estimates the <b>joint entropy</b> of many views of a 3DGS scene at once, so overlapping
+      viewpoints stop being double-counted &mdash; turning myopic next-best-view into
+      <b>long-horizon</b> and <b>multi-agent</b> active mapping.</p>
+    </div>
+  </div>
+
+  <div class="container" style="margin-top: 30px;">
+    <!-- SLOT: teaser -->
+    <figure class="slot" data-src="figs/teaser.png" data-adapt="true" style="--ar: 2 / 1;">
+      <div class="slot-box">
+        <div class="slot-ph">
+          <span class="kind fig">Figure</span>
+          <strong>Teaser &mdash; the double-counting problem</strong>
+          <code>figs/teaser.png</code>
+          <small>Fig. 1 from the paper: agent on a candidate trajectory, red + pink frusta observing a shared
+          region (shaded wedge), projected onto both image planes. Baselines count that overlap twice; JEVIS
+          computes joint entropy.</small>
+          <span class="layout-hint">Wide landscape, ~2:1 &middot; export page 2 of jevis_figs-cropped.pdf at ≥2000px wide</span>
+        </div>
+      </div>
+    </figure>
+    <figcaption class="fig-caption narrow" style="margin-inline: auto;">
+      <b>The overlap problem.</b> An agent evaluates a candidate trajectory whose views overlap. Baseline
+      estimators score each view independently and count the shared region as uncertain every time,
+      overstating the trajectory's information gain. JEVIS instead computes the <i>joint entropy</i> across views.
+    </figcaption>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     02 · ACTIVE MAPPING  ← primary content (GIFs, room-heavy)
+     ══════════════════════════════════════════════════════════════════ -->
+<section class="section alt" id="mapping">
+  <div class="container">
+    <div class="section-head">
+      <p class="overline">02 · Active Mapping</p>
+      <h2>JEVIS in the loop</h2>
+      <p class="lede">Each clip is a full active-mapping rollout driven by JEVIS: the agent plans a trajectory by
+      joint entropy, executes it, folds the new observations into the 3DGS, and re-plans. Trajectories run from the
+      <b>star</b> (start) to the <b>frustum</b> (end), with colour progressing dark&nbsp;&rarr;&nbsp;light over time.</p>
+    </div>
+
+    <!-- ---------- Featured room rollout ---------- -->
+    <h3 class="sub">Indoor rollout <span class="pill">Featured</span></h3>
+    <div class="showcase-featured">
+      <!-- SLOT: hero GIF -->
+      <figure class="slot" data-src="static/gifs/am_room_featured.gif" style="--ar: 16 / 9;">
+        <div class="slot-box">
+          <div class="slot-ph">
+            <span class="kind">GIF</span>
+            <strong>Hero rollout &mdash; single agent, indoor room</strong>
+            <code>static/gifs/am_room_featured.gif</code>
+            <small>The one clip that carries the page. Pick the most legible room scene: growing 3DGS
+            reconstruction with the JEVIS trajectory drawing itself in, star at the start, frustum at the current
+            pose. Loop cleanly.</small>
+            <span class="layout-hint">16:9 &middot; ~1280&times;720 &middot; keep under ~8&nbsp;MB (GitHub Pages serves it on every visit)</span>
+          </div>
+        </div>
+      </figure>
+      <div class="card-meta">
+        <span class="scene">Scene name <span class="ds">&mdash; Gibson / HM3D</span></span>
+        <span class="chip single">Single-agent</span>
+      </div>
+    </div>
+
+    <!-- ---------- Room grid, single agent ---------- -->
+    <h3 class="sub">More indoor scenes <span class="pill">Single-agent</span></h3>
+    <div class="showcase-grid">
+      <figure class="slot compact card" data-src="static/gifs/am_room_01.gif" style="--ar: 4 / 3;">
+        <div class="slot-box"><div class="slot-ph">
+          <span class="kind">GIF</span><strong>Room 1</strong><code>static/gifs/am_room_01.gif</code>
+          <small>Gibson &mdash; 8-step budget</small>
+        </div></div>
+        <figcaption class="card-meta"><span class="scene">Scene 1 <span class="ds">&mdash; Gibson</span></span><span class="chip single">Single</span></figcaption>
+      </figure>
+
+      <figure class="slot compact card" data-src="static/gifs/am_room_02.gif" style="--ar: 4 / 3;">
+        <div class="slot-box"><div class="slot-ph">
+          <span class="kind">GIF</span><strong>Room 2</strong><code>static/gifs/am_room_02.gif</code>
+          <small>Gibson &mdash; 8-step budget</small>
+        </div></div>
+        <figcaption class="card-meta"><span class="scene">Scene 2 <span class="ds">&mdash; Gibson</span></span><span class="chip single">Single</span></figcaption>
+      </figure>
+
+      <figure class="slot compact card" data-src="static/gifs/am_room_03.gif" style="--ar: 4 / 3;">
+        <div class="slot-box"><div class="slot-ph">
+          <span class="kind">GIF</span><strong>Room 3</strong><code>static/gifs/am_room_03.gif</code>
+          <small>HM3D-small &mdash; 8-step budget</small>
+        </div></div>
+        <figcaption class="card-meta"><span class="scene">Scene 3 <span class="ds">&mdash; HM3D-small</span></span><span class="chip single">Single</span></figcaption>
+      </figure>
+
+      <figure class="slot compact card" data-src="static/gifs/am_room_04.gif" style="--ar: 4 / 3;">
+        <div class="slot-box"><div class="slot-ph">
+          <span class="kind">GIF</span><strong>Room 4</strong><code>static/gifs/am_room_04.gif</code>
+          <small>HM3D-small &mdash; 8-step budget</small>
+        </div></div>
+        <figcaption class="card-meta"><span class="scene">Scene 4 <span class="ds">&mdash; HM3D-small</span></span><span class="chip single">Single</span></figcaption>
+      </figure>
+
+      <figure class="slot compact card" data-src="static/gifs/am_room_05.gif" style="--ar: 4 / 3;">
+        <div class="slot-box"><div class="slot-ph">
+          <span class="kind">GIF</span><strong>Room 5</strong><code>static/gifs/am_room_05.gif</code>
+          <small>HM3D-large &mdash; 20-step budget, 700&ndash;1300&nbsp;m&sup2;</small>
+        </div></div>
+        <figcaption class="card-meta"><span class="scene">Scene 5 <span class="ds">&mdash; HM3D-large</span></span><span class="chip single">Single</span></figcaption>
+      </figure>
+
+      <figure class="slot compact card" data-src="static/gifs/am_room_06.gif" style="--ar: 4 / 3;">
+        <div class="slot-box"><div class="slot-ph">
+          <span class="kind">GIF</span><strong>Room 6</strong><code>static/gifs/am_room_06.gif</code>
+          <small>HM3D-large &mdash; 20-step budget, the long-horizon showcase</small>
+        </div></div>
+        <figcaption class="card-meta"><span class="scene">Scene 6 <span class="ds">&mdash; HM3D-large</span></span><span class="chip single">Single</span></figcaption>
+      </figure>
+    </div>
+
+    <!-- ---------- Multi-agent room row ---------- -->
+    <h3 class="sub">Three agents, one shared visibility field <span class="pill">Multi-agent</span></h3>
+    <p class="prose" style="max-width: 780px; margin-bottom: 16px;">
+      Under sequential greedy assignment each agent scores its candidates against a field that already encodes
+      everything the previously assigned agents committed to &mdash; so the team <b>branches early</b> instead of
+      crowding the same corridor.
+    </p>
+    <div class="showcase-grid">
+      <figure class="slot compact card" data-src="static/gifs/am_multi_room_01.gif" style="--ar: 4 / 3;">
+        <div class="slot-box"><div class="slot-ph">
+          <span class="kind">GIF</span><strong>Multi-agent room 1</strong><code>static/gifs/am_multi_room_01.gif</code>
+          <small>Three agents from the same start pose, one colour per agent</small>
+        </div></div>
+        <figcaption class="card-meta"><span class="scene">Scene A <span class="ds">&mdash; Gibson</span></span><span class="chip multi">3 agents</span></figcaption>
+      </figure>
+
+      <figure class="slot compact card" data-src="static/gifs/am_multi_room_02.gif" style="--ar: 4 / 3;">
+        <div class="slot-box"><div class="slot-ph">
+          <span class="kind">GIF</span><strong>Multi-agent room 2</strong><code>static/gifs/am_multi_room_02.gif</code>
+          <small>Half the per-agent budget vs. single-agent</small>
+        </div></div>
+        <figcaption class="card-meta"><span class="scene">Scene B <span class="ds">&mdash; HM3D-small</span></span><span class="chip multi">3 agents</span></figcaption>
+      </figure>
+
+      <figure class="slot compact card" data-src="static/gifs/am_multi_room_03.gif" style="--ar: 4 / 3;">
+        <div class="slot-box"><div class="slot-ph">
+          <span class="kind">GIF</span><strong>Multi-agent room 3</strong><code>static/gifs/am_multi_room_03.gif</code>
+          <small>HM3D-large &mdash; biggest multi-agent margin in the tables</small>
+        </div></div>
+        <figcaption class="card-meta"><span class="scene">Scene C <span class="ds">&mdash; HM3D-large</span></span><span class="chip multi">3 agents</span></figcaption>
+      </figure>
+    </div>
+
+    <!-- ---------- Space scenes ---------- -->
+    <h3 class="sub">Space robotics <span class="pill">Free-flying</span></h3>
+    <p class="prose" style="max-width: 780px; margin-bottom: 16px;">
+      Exterior space scenes use a smooth spline sampler that models continuous free-flying trajectories orbiting
+      the target. Here overlap comes from <b>revisiting</b> an earlier viewpoint as the trajectory closes its loop.
+    </p>
+    <div class="showcase-grid space">
+      <figure class="slot compact card" data-src="static/gifs/am_space_01.gif" style="--ar: 1 / 1;">
+        <div class="slot-box"><div class="slot-ph">
+          <span class="kind">GIF</span><strong>Space 1</strong><code>static/gifs/am_space_01.gif</code>
+          <small>Spacecraft orbit rollout</small>
+        </div></div>
+        <figcaption class="card-meta"><span class="scene">Spacecraft A <span class="ds">&mdash; Space</span></span><span class="chip single">Single</span></figcaption>
+      </figure>
+
+      <figure class="slot compact card" data-src="static/gifs/am_space_02.gif" style="--ar: 1 / 1;">
+        <div class="slot-box"><div class="slot-ph">
+          <span class="kind">GIF</span><strong>Space 2</strong><code>static/gifs/am_space_02.gif</code>
+          <small>Second orbit / different target</small>
+        </div></div>
+        <figcaption class="card-meta"><span class="scene">Spacecraft B <span class="ds">&mdash; Space</span></span><span class="chip single">Single</span></figcaption>
+      </figure>
+
+      <figure class="slot compact card" data-src="static/gifs/am_space_03.gif" style="--ar: 1 / 1;">
+        <div class="slot-box"><div class="slot-ph">
+          <span class="kind">GIF</span><strong>Space 3 &mdash; indoor space scene</strong><code>static/gifs/am_space_03.gif</code>
+          <small>The one indoor scene in the space set</small>
+        </div></div>
+        <figcaption class="card-meta"><span class="scene">Station interior <span class="ds">&mdash; Space</span></span><span class="chip single">Single</span></figcaption>
+      </figure>
+    </div>
+
+    <div class="legend-row">
+      <span><span class="swatch" style="background: var(--accent);"></span>JEVIS trajectory</span>
+      <span>&#9733; start pose</span>
+      <span>&#9723; current camera frustum</span>
+      <span class="note">Colour runs dark &rarr; light with time.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     03 · INSIGHTS
+     ══════════════════════════════════════════════════════════════════ -->
+<section class="section" id="insights">
+  <div class="container narrow">
+    <div class="section-head">
+      <p class="overline">03 · Insights</p>
+      <h2>Why joint entropy</h2>
+    </div>
+    <div class="insight-list">
+      <div class="insight">
+        <span class="num">1</span>
+        <div>
+          <h4>Overlapping views share information.</h4>
+          <p>Two views of the same wall do not tell you twice as much about it. Their observations are correlated
+          through the shared scene parameters, and that correlation is not negligible.</p>
+        </div>
+      </div>
+      <div class="insight">
+        <span class="num">2</span>
+        <div>
+          <h4>Summing per-view entropies double-counts it.</h4>
+          <p>Existing visibility-based estimators score one rendered image at a time. Adding those scores along a
+          trajectory accumulates redundant gain and overestimates how much the trajectory is worth.</p>
+        </div>
+      </div>
+      <div class="insight">
+        <span class="num">3</span>
+        <div>
+          <h4>The chain rule fixes it &mdash; if you can afford it.</h4>
+          <p>Joint entropy decomposes into conditional terms, each measuring only what a view adds beyond the ones
+          already planned. Evaluating those terms exactly would mean retraining the radiance field at every step.
+          JEVIS gets them for the price of a single training run.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     04 · ABSTRACT
+     ══════════════════════════════════════════════════════════════════ -->
+<section class="section alt" id="abstract">
+  <div class="container narrow">
+    <div class="section-head">
+      <p class="overline">04 · Abstract</p>
+      <h2>Abstract</h2>
+    </div>
+    <div class="prose">
+      <p>Active mapping requires planning observations that maximally reduce uncertainty about an unknown scene.
+      Recent work uses visibility fields to quantify uncertainty in 3D Gaussian Splatting (3DGS), assigning higher
+      uncertainty to unobserved regions. However, existing approaches score the entropy of a single rendered image
+      and therefore primarily support myopic next-best-view selection. Practical deployments instead require
+      estimating the <b>joint entropy of multiple observations</b>, such as views along a long-horizon trajectory or
+      viewpoints assigned across a multi-robot system. In these settings, overlapping views observe the same region
+      of the scene, and the correlation between their observations is not negligible.</p>
+
+      <p>We present <b>Joint Entropy Estimation in 3DGS via Visibility field (JEVIS)</b>, a principled framework for
+      computing the joint entropy of multiple synthesized views of a trained 3DGS. By leveraging a
+      <b>maximum-likelihood observation (MLO)</b> approximation, JEVIS accurately estimates joint entropy across
+      multiple views without repeated radiance field retraining. This lightweight formulation extends naturally to
+      multi-agent active mapping. We evaluate JEVIS in long-horizon single-agent and multi-agent active mapping
+      across diverse indoor and space-robotics environments. Results show that JEVIS more accurately captures joint
+      uncertainty and produces higher-fidelity reconstructions than existing methods.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     05 · METHOD
+     ══════════════════════════════════════════════════════════════════ -->
+<section class="section" id="method">
+  <div class="container">
+    <div class="section-head">
+      <p class="overline">05 · Method</p>
+      <h2>From per-view entropy to joint entropy</h2>
+      <p class="lede">Three moves: decompose the objective with the chain rule, make each conditional term tractable
+      with a maximum-likelihood observation, and realise the whole decomposition by <b>updating the visibility field
+      in place</b> as candidate poses are scored.</p>
+    </div>
+
+    <!-- ---------- Pipeline figure ---------- -->
+    <figure class="slot" data-src="figs/method.png" data-adapt="true" style="--ar: 3 / 1;">
+      <div class="slot-box">
+        <div class="slot-ph">
+          <span class="kind fig">Figure</span>
+          <strong>JEVIS framework &mdash; mapping loop + scoring loop</strong>
+          <code>figs/method.png</code>
+          <small>Fig. 2 from the paper. (Left) evaluate candidate trajectories, execute the highest-entropy one,
+          add observations to the training set. (Right) starting from the field built on existing training views,
+          score each candidate pose with GAVIS and update the field before the next.</small>
+          <span class="layout-hint">Very wide, ~3:1 &middot; export page 1 of jevis_figs-cropped.pdf at ≥2400px wide</span>
+        </div>
+      </div>
+    </figure>
+    <figcaption class="fig-caption">
+      <b>Active mapping and the JEVIS framework.</b> (Left) JEVIS evaluates the joint entropy of candidate
+      trajectories from the current 3DGS reconstruction, executes the highest-entropy trajectory, and adds the
+      acquired observations to the training set. (Right) Starting from the visibility field constructed from
+      existing training views, JEVIS sequentially evaluates each candidate pose using the GAVIS estimator and
+      updates the field with its observation before evaluating the next. This procedure supports trajectories of
+      arbitrary length.
+    </figcaption>
+
+    <!-- ---------- The three steps ---------- -->
+    <h3 class="sub">The formulation</h3>
+    <div class="steps">
+      <div class="step">
+        <p class="k">STEP 01</p>
+        <h4>Chain rule</h4>
+        <p>Maximising expected information gain over a pose sequence reduces to maximising the joint entropy of the
+        observations, which decomposes into a sum of <b>conditional</b> entropies &mdash; each counting only what a
+        view adds beyond the ones already planned.</p>
+      </div>
+      <div class="step">
+        <p class="k">STEP 02</p>
+        <h4>MLO approximation</h4>
+        <p>The not-yet-acquired observations are replaced by their most likely values under the current model
+        &mdash; the rendered means. An intractable marginalisation collapses to a single point evaluation while
+        cross-view dependence on <span class="math-inline" data-tex="\bm{\theta}">θ</span> is preserved.</p>
+      </div>
+      <div class="step">
+        <p class="k">STEP 03</p>
+        <h4>Update the field, not the model</h4>
+        <p>Score pose <code>k</code> against the field, absorb it with <code>UpdateVF</code>, then score pose
+        <code>k+1</code>. We prove this returns exactly the MLO-approximated joint entropy &mdash; with
+        <b>zero</b> extra retraining passes.</p>
+      </div>
+    </div>
+
+    <!-- ---------- Equations ---------- -->
+    <div class="eq">
+      <div class="math" data-tex="\bm{p}^{*}_{t+1:t+L} \;=\; \operatorname*{arg\,max}_{\bm{p}_{t+1:t+L}} \; \mathcal{H}\!\left(\bm{Z}_{t+1:t+L}\right) \;=\; \operatorname*{arg\,max}_{\bm{p}_{t+1:t+L}} \; \sum_{k=t+1}^{t+L} \mathcal{H}\!\left(\bm{Z}_k \mid \bm{Z}_{t+1:k-1}\right)"
+           data-fallback="p*_{t+1:t+L} = argmax_p H(Z_{t+1:t+L}) = argmax_p SUM_{k=t+1..t+L} H(Z_k | Z_{t+1:k-1})"></div>
+      <p class="eq-note">Joint entropy, decomposed by the chain rule. The conditional terms are what make overlap
+      cost nothing twice &mdash; so the joint entropy is strictly smaller than the sum of per-view marginals.</p>
+    </div>
+
+    <div class="eq">
+      <div class="math" data-tex="\mathcal{H}\!\left(\bm{Z}_k \mid \bm{Z}_{t+1:k-1}\right) \;\approx\; \mathcal{H}\!\left(\bm{Z}_k \,\big|\, \bm{Z}_{t+1:k-1} = f(\bm{p}_{t+1:k-1}; \bm{\theta})\right)"
+           data-fallback="H(Z_k | Z_{t+1:k-1}) ~= H(Z_k | Z_{t+1:k-1} = f(p_{t+1:k-1}; theta))"></div>
+      <p class="eq-note">The maximum-likelihood observation approximation: unknown future observations become the
+      rendered means under the current model.</p>
+    </div>
+
+    <!-- ---------- Algorithm + correctness ---------- -->
+    <h3 class="sub">The algorithm</h3>
+    <div class="two-col">
+      <pre class="algo"><span class="c">Require:</span> past obs z<sub>1:t</sub>, past poses p<sub>1:t</sub>, candidate p<sub>t+1:t+L</sub>
+<span class="c">Ensure:</span>  joint entropy H
+
+<span class="c">▷ train 3DGS — once</span>
+θ*<sub>t</sub> ← argmin<sub>θ</sub> Σ<sub>k=1..t</sub> ‖ f(p<sub>k</sub>; θ) − z<sub>k</sub> ‖²
+
+<span class="c">▷ build the visibility field from past poses</span>
+V<sub>0</sub> ← InitVF(θ*<sub>t</sub>)
+<span class="kw">for</span> k = 1 <span class="kw">to</span> t <span class="kw">do</span>
+    V<sub>k</sub> ← UpdateVF(V<sub>k−1</sub>, θ*<sub>t</sub>, p<sub>k</sub>)
+
+<span class="c">▷ score the candidate trajectory</span>
+<span class="kw">for</span> k = t+1 <span class="kw">to</span> t+L <span class="kw">do</span>
+    H<sub>k</sub> ← GAVIS(p<sub>k</sub>; V<sub>k−1</sub>, θ*<sub>t</sub>)
+    <span class="hl">V<sub>k</sub> ← UpdateVF(V<sub>k−1</sub>, θ*<sub>t</sub>, p<sub>k</sub>)</span>
+
+<span class="kw">return</span> Σ<sub>k=t+1..t+L</sub> H<sub>k</sub></pre>
+
+      <div>
+        <div class="callout">
+          <h4>The highlighted line is the whole method.</h4>
+          <p>Remove it and the field freezes at <span class="math-inline" data-tex="\mathcal{V}_t">V<sub>t</sub></span>
+          for the entire candidate loop. Every pose is then scored independently, JEVIS collapses to a naive sum of
+          per-view marginals, and overlapping viewpoints get counted twice.</p>
+        </div>
+        <div class="callout" style="margin-top: 14px; background: var(--surface); border-color: var(--hairline);">
+          <h4 style="color: var(--ink);">Proposition (correctness).</h4>
+          <p>Under the MLO approximation, this algorithm returns exactly the joint entropy that an idealised
+          procedure would &mdash; one that retrains the 3DGS and rebuilds the visibility field at every step. The
+          proof shows the parameters never move (<span class="math-inline" data-tex="\bm{\theta}^{*}_{k-1} = \bm{\theta}^{*}_{t}">θ*<sub>k−1</sub> = θ*<sub>t</sub></span>),
+          so the fields and the per-step entropies agree by induction. JEVIS therefore adds <b>no approximation
+          beyond MLO</b> while eliminating <span class="math-inline" data-tex="L">L</span> retraining passes per
+          candidate trajectory.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- Multi-agent ---------- -->
+    <h3 class="sub">Multi-agent extension</h3>
+    <div class="two-col">
+      <div class="prose">
+        <p>With <span class="math-inline" data-tex="M">M</span> agents each committing to one trajectory from its own
+        candidate pool, exhaustive search over the product space is exponential in
+        <span class="math-inline" data-tex="M">M</span>. But joint entropy is <b>monotone submodular</b> in the
+        selected view set and the one-trajectory-per-agent constraint is a <b>partition matroid</b>, so sequential
+        greedy selection carries a <b>1/2 approximation guarantee</b>.</p>
+        <p>We keep one shared running visibility field and visit agents in a uniformly random permutation,
+        resampled at every planning step so imbalanced pools never create a systematic priority bias. Each agent
+        scores against a field that already encodes every earlier commitment &mdash; overlap <i>across</i> agents is
+        discounted by exactly the same mechanism that handles overlap <i>within</i> a trajectory.</p>
+      </div>
+
+      <!-- SLOT: optional multi-agent diagram -->
+      <figure class="slot" data-src="figs/multiagent.png" style="--ar: 4 / 3;">
+        <div class="slot-box">
+          <div class="slot-ph">
+            <span class="kind fig">Figure</span>
+            <strong>Multi-agent assignment <em>(optional)</em></strong>
+            <code>figs/multiagent.png</code>
+            <small>If you want a visual for Alg. 2: three agents, shared field V, random permutation π, each
+            agent's committed trajectory darkening the field for the next. Delete this figure block if you'd
+            rather keep the section text-only.</small>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     06 · UNCERTAINTY  ← primary content (entropy/RGB strips, room-heavy)
+     ══════════════════════════════════════════════════════════════════ -->
+<section class="section alt" id="uncertainty">
+  <div class="container">
+    <div class="section-head">
+      <p class="overline">06 · Uncertainty</p>
+      <h2>What the estimator actually sees</h2>
+      <p class="lede">Per-pose uncertainty maps along one candidate trajectory. GAVIS and JEVIS start from the same
+      partially-covering training views, so at the <b>first</b> pose they are identical. From the second pose onward
+      they diverge: GAVIS keeps scoring against the fixed training set, while JEVIS folds in visibility from the
+      preceding poses &mdash; and tracks ground-truth visibility.</p>
+    </div>
+
+    <div class="strip-key">
+      <span class="col">Pose dist.</span><span class="arrow">&rarr;</span>
+      <span class="col">GT RGB</span><span class="arrow">&rarr;</span>
+      <span class="col">Pred. RGB</span><span class="arrow">&rarr;</span>
+      <span class="col">GAVIS</span><span class="arrow">&rarr;</span>
+      <span class="col ours">JEVIS (ours)</span><span class="arrow">&rarr;</span>
+      <span class="col">GT visibility</span>
+      <span class="colorbar"><span>Low</span><span class="bar"></span><span>High uncertainty</span></span>
+    </div>
+
+    <div class="strip-list">
+      <!-- SLOT: featured room strip -->
+      <figure class="strip slot" data-src="figs/entropy_room_featured.png" data-adapt="true" style="--ar: 21 / 9;">
+        <div class="slot-box">
+          <div class="slot-ph">
+            <span class="kind strip">Strip</span>
+            <strong>Featured indoor strip &mdash; 3 poses &times; 6 columns</strong>
+            <code>figs/entropy_room_featured.png</code>
+            <small>This is <code>barb_entropy.png</code> from the paper. Candidate trajectory extending from
+            observed into unseen regions with substantial view overlap. Rows = successive poses; columns = pose
+            distribution, GT RGB, predicted RGB, GAVIS, JEVIS, GT visibility.</small>
+            <span class="layout-hint">Very wide &middot; source is 4168&times;1789 &middot; downscale to ~2000px wide for the web</span>
+          </div>
+        </div>
+        <figcaption class="strip-meta">
+          <span class="scene">Indoor scene <span class="ds">&mdash; overlapping views into unseen regions</span></span>
+          <span class="desc">JEVIS darkens the region the previous pose already explained; GAVIS re-flags it.</span>
+        </figcaption>
+      </figure>
+
+      <!-- SLOT: room strip 2 -->
+      <figure class="strip slot" data-src="figs/entropy_room_02.png" data-adapt="true" style="--ar: 21 / 9;">
+        <div class="slot-box">
+          <div class="slot-ph">
+            <span class="kind strip">Strip</span>
+            <strong>Indoor strip 2</strong>
+            <code>figs/entropy_room_02.png</code>
+            <small>A second room, ideally one where the trajectory doubles back so the divergence between GAVIS
+            and JEVIS is dramatic. Same 6-column layout.</small>
+          </div>
+        </div>
+        <figcaption class="strip-meta">
+          <span class="scene">Indoor scene 2 <span class="ds">&mdash; HM3D</span></span>
+          <span class="desc">Caption: what to look at in this one.</span>
+        </figcaption>
+      </figure>
+
+      <!-- SLOT: room strip 3 -->
+      <figure class="strip slot" data-src="figs/entropy_room_03.png" data-adapt="true" style="--ar: 21 / 9;">
+        <div class="slot-box">
+          <div class="slot-ph">
+            <span class="kind strip">Strip</span>
+            <strong>Indoor strip 3 <em>(optional)</em></strong>
+            <code>figs/entropy_room_03.png</code>
+            <small>Third room strip if you have one worth showing &mdash; e.g. a large HM3D scene where the
+            long horizon makes the accumulated visibility obvious. Delete this block otherwise.</small>
+          </div>
+        </div>
+        <figcaption class="strip-meta">
+          <span class="scene">Indoor scene 3 <span class="ds">&mdash; HM3D-large</span></span>
+          <span class="desc">Caption: what to look at in this one.</span>
+        </figcaption>
+      </figure>
+
+      <!-- SLOT: space strip -->
+      <figure class="strip slot" data-src="figs/entropy_space.png" data-adapt="true" style="--ar: 21 / 9;">
+        <div class="slot-box">
+          <div class="slot-ph">
+            <span class="kind strip">Strip</span>
+            <strong>Space strip &mdash; revisited viewpoint</strong>
+            <code>figs/entropy_space.png</code>
+            <small>This is <code>space_entropy.png</code> from the paper. The trajectory circles the spacecraft
+            and revisits an earlier viewpoint &mdash; the cleanest demonstration that JEVIS remembers what it has
+            already seen.</small>
+            <span class="layout-hint">Same 6-column layout &middot; source is 4168&times;1789</span>
+          </div>
+        </div>
+        <figcaption class="strip-meta">
+          <span class="scene">Space scene <span class="ds">&mdash; orbiting trajectory</span></span>
+          <span class="desc">The loop closes: the revisited region stays dark for JEVIS, bright for GAVIS.</span>
+        </figcaption>
+      </figure>
+    </div>
+
+    <p class="fig-caption" style="margin-top: 18px;">
+      <b>GT Vis.</b> denotes ground-truth mesh visibility, with bright regions indicating surfaces unseen by the
+      training views and by preceding trajectory poses. Accurate uncertainty quantification assigns higher
+      uncertainty to regions with lower ground-truth visibility &mdash; JEVIS uncertainty closely aligns with GT
+      Vis. throughout each trajectory.
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     07 · RESULTS
+     ══════════════════════════════════════════════════════════════════ -->
+<section class="section" id="results">
+  <div class="container">
+    <div class="section-head">
+      <p class="overline">07 · Results</p>
+      <h2>Best on every environment, every metric</h2>
+      <p class="lede">Four datasets &mdash; Gibson, HM3D-small, HM3D-large and a space-robotics set &mdash; against
+      six baselines, all sharing the same active-mapping pipeline and pose sampler so differences come only from the
+      uncertainty estimator.</p>
+    </div>
+
+    <!-- ---------- Headline numbers ---------- -->
+    <div class="stat-grid">
+      <div class="stat accent">
+        <div class="v">40<small>/40</small></div>
+        <p class="l">Dataset &times; metric &times; setting combinations where JEVIS ranks first</p>
+      </div>
+      <div class="stat accent">
+        <div class="v">2.0<small>&times;</small></div>
+        <p class="l">Lower AUSE-D than the strongest baseline (0.144 vs. 0.288)</p>
+      </div>
+      <div class="stat">
+        <div class="v">+1.5<small>&nbsp;dB</small></div>
+        <p class="l">Mean multi-agent PSNR gain over GAVIS across the four datasets</p>
+      </div>
+      <div class="stat">
+        <div class="v">+0.12<small>&nbsp;VIS</small></div>
+        <p class="l">Mean multi-agent visual-coverage gain over GAVIS &mdash; the margin grows with team size</p>
+      </div>
+    </div>
+
+    <!-- ---------- Interactive radar ---------- -->
+    <h3 class="sub">Active mapping <span class="pill">Tab. II &amp; III</span></h3>
+    <div class="chart-card">
+      <div class="chart-controls">
+        <div class="seg" id="settingToggle" role="group" aria-label="Planning setting">
+          <button type="button" data-setting="single" aria-pressed="true">Single-agent</button>
+          <button type="button" data-setting="multi" aria-pressed="false">Multi-agent</button>
+        </div>
+        <span class="lbl">Dataset</span>
+        <div class="pills" id="datasetPills" role="group" aria-label="Dataset"></div>
+      </div>
+
+      <div class="radar-wrap">
+        <div class="radar-canvas"><canvas id="radarChart" role="img" aria-label="Radar chart comparing JEVIS against six baselines across PSNR, SSIM, LPIPS, completion ratio and visual coverage"></canvas></div>
+        <div class="chart-legend" id="radarLegend"></div>
+      </div>
+
+      <div class="chart-foot">
+        <span>Axes are min&ndash;max normalised across the seven methods; farther from the centre is better. LPIPS is inverted.</span>
+        <button class="link-btn" id="tableToggle" type="button" aria-expanded="false" aria-controls="resultsTable">Show the numbers</button>
+      </div>
+
+      <div id="resultsTable" hidden>
+        <div class="table-wrap"><table class="results"><caption class="sr-only">Active mapping results</caption><thead></thead><tbody></tbody></table></div>
+        <p class="note" style="margin-top: 10px;">Mean &plusmn; standard error. <b>Bold</b> is best, <u>underlined</u> is second best.</p>
+      </div>
+    </div>
+
+    <!-- ---------- Static radar exports ---------- -->
+    <p class="fig-caption">
+      Static exports of every chart live in <code>figs/charts/</code> (<code>radar_single_*.svg</code>,
+      <code>radar_multi_*.svg</code>, <code>ause_bars.svg</code>) &mdash; drop them straight into slides or the
+      supplementary. Regenerate them all with <code>python3 tools/make_charts.py</code> after editing
+      <code>data/results.json</code>.
+    </p>
+
+    <!-- ---------- AUSE ---------- -->
+    <h3 class="sub">Joint uncertainty quantification <span class="pill">Tab. I</span></h3>
+    <p class="prose" style="max-width: 820px;">
+      AUSE is computed with pixels aggregated across the <b>entire set</b> of observations rather than per view
+      &mdash; the evaluation that actually probes joint uncertainty. JEVIS leads on both variants because it
+      conditions each pose on the previously planned ones <i>and</i> inherits the anisotropic visibility field, so
+      under-constrained regions are correctly flagged as uncertain.
+    </p>
+    <div class="chart-card" style="margin-top: 16px;">
+      <div class="bars-grid">
+        <div>
+          <p class="bar-title">AUSE-D &darr; <span class="note">depth-based</span></p>
+          <div class="bar-canvas"><canvas id="auseD" role="img" aria-label="Bar chart of depth-based AUSE by method, lower is better"></canvas></div>
+        </div>
+        <div>
+          <p class="bar-title">AUSE-V &darr; <span class="note">visibility-based</span></p>
+          <div class="bar-canvas"><canvas id="auseV" role="img" aria-label="Bar chart of visibility-based AUSE by method, lower is better"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-foot">
+        <span>Evaluated on 8 representative scenes across all datasets. Lower is better.</span>
+        <button class="link-btn" id="auseTableToggle" type="button" aria-expanded="false" aria-controls="auseTable">Show the numbers</button>
+      </div>
+      <div id="auseTable" hidden>
+        <div class="table-wrap"><table class="results"><caption class="sr-only">AUSE results</caption><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ---------- Qualitative reconstructions ---------- -->
+    <h3 class="sub">Qualitative reconstructions</h3>
+    <div class="qual-grid">
+      <figure class="slot" data-src="figs/qual_am_room.png" data-adapt="true" style="--ar: 16 / 9;">
+        <div class="slot-box">
+          <div class="slot-ph">
+            <span class="kind fig">Figure</span>
+            <strong>Final reconstructions + trajectories &mdash; indoor</strong>
+            <code>figs/qual_am_room.png</code>
+            <small>This is <code>8_12_am.png</code> from the paper: Gibson single-agent on top, HM3D-small
+            multi-agent below. Method columns side by side so the trajectory spread is comparable.</small>
+            <span class="layout-hint">~16:9 &middot; source is 1552&times;1206, so either crop or let it letterbox</span>
+          </div>
+        </div>
+        <figcaption class="fig-caption">
+          <b>Qualitative active mapping.</b> Reconstructions and trajectories on Gibson (top, single-agent) and
+          HM3D-small (bottom, multi-agent). JEVIS spreads coverage more evenly; in the multi-agent row GAVIS agents
+          follow similar paths while JEVIS agents branch early to explore separate regions in parallel.
+        </figcaption>
+      </figure>
+
+      <figure class="slot" data-src="figs/qual_am_space.png" data-adapt="true" style="--ar: 16 / 9;">
+        <div class="slot-box">
+          <div class="slot-ph">
+            <span class="kind fig">Figure</span>
+            <strong>Final reconstructions &mdash; space <em>(optional)</em></strong>
+            <code>figs/qual_am_space.png</code>
+            <small>Space-scene equivalent if you have one. Delete this block if the indoor figure is enough.</small>
+          </div>
+        </div>
+        <figcaption class="fig-caption"><b>Space reconstructions.</b> Caption TODO.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     08 · BIBTEX
+     ══════════════════════════════════════════════════════════════════ -->
+<section class="section alt" id="bibtex">
+  <div class="container narrow">
+    <div class="bib-head">
+      <div class="section-head" style="margin: 0;">
+        <p class="overline">08 · Citation</p>
+        <h2>BibTeX</h2>
+      </div>
+      <button class="copy-btn" id="copyBib" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span>Copy</span>
+      </button>
+    </div>
+    <pre class="bib" id="bibText"><code>@inproceedings{anonymous2026jevis,
+  title     = {JEVIS: Joint Entropy Estimation in 3DGS via Visibility Field
+               for Long-Horizon and Multi-Agent Active Mapping},
+  author    = {Anonymous},
+  booktitle = {Under review},
+  year      = {2026}
+}</code></pre>
+    <p class="note" style="margin-top: 12px;">Anonymised for review &mdash; replace with the real entry at camera-ready.</p>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container narrow">
+    <p>Anonymous submission &mdash; page content is under review. All links on this page are placeholders.</p>
+  </div>
+</footer>
+
+</main>
+
+<button class="to-top" id="toTop" type="button" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script src="static/vendor/chart.umd.js"></script>
+<script src="static/vendor/katex/katex.min.js"></script>
+<script src="static/js/results-data.js"></script>
+<script src="static/js/main.js"></script>
+</body>
+</html>
